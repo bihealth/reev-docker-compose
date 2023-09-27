@@ -179,7 +179,8 @@ services:
     <<: *service_default
     container_name: pgadmin
     hostname: pgadmin
-    image: ${image_pgadmin_name:-dpage/pgadmin4}:${image_pgadmin_version:-latest}
+    image: "${image_pgadmin_name:-dpage/pgadmin4}:\
+      ${image_pgadmin_version:-latest}"
     secrets:
       - db-password
       - pgadmin-password
