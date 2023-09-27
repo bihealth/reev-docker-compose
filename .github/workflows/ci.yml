@@ -39,6 +39,8 @@ jobs:
 
       - name: Prepare configuration
         run: |
+          cp .env.ci .env
+
           mkdir -p .ci/config/nginx
           cp utils/nginx/nginx.conf .ci/config/nginx
           mkdir -p .ci/config/pgadmin
@@ -49,6 +51,6 @@ jobs:
         with:
           compose-file: docker-compose.yml
           compose-flags: |
-            --env-file .env.ci
+            --env-file .env
         env:
           DB_PASSWORD: "password"
