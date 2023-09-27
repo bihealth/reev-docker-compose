@@ -28,6 +28,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Prepare secrets
+        run: |
+          mkdir -p .ci/secrets
+          echo db-password > .ci/secrets/db-password
+          echo pgadmin-password > .ci/secrets/pgadmin-password
+
       - name: Prepare empty volumes
         run: |
           mkdir -p .ci/volumes/minio/data
