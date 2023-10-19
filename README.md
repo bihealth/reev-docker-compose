@@ -265,7 +265,8 @@ reev-server-worker db to-bin \
   --path-output-bin .dev/volumes/reev-static/data/worker/grch37/strucvars/inhouse.bin
 ```
 
-To obtain ClinVar
+To obtain ClinVar, use the following.
+Note that this will install the data from October 15, 2023 and you might want to [look here for the latest release](https://github.com/bihealth/annonars-data-clinvar/releases).
 
 ```bash session
 wget -O /tmp/annonars-clinvar-minimal-grch37-20231015+0.24.1.tar.gz \
