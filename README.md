@@ -119,7 +119,7 @@ reduced-dev/annonars/*
 reduced-dev/mehari/*
 reduced-dev/viguno/*
 EOF
-STATIC=varfish-static
+STATIC=reev-static
 mkdir -p .dev/volumes/$STATIC/data/download
 (set -x; for token in $(grep -v ^# /tmp/tokens.txt); do \
   src=$token; \
@@ -141,7 +141,7 @@ Setup symlink structure so the data is at the expected location.
 ## annonars
 ##
 
-STATIC=varfish-static
+STATIC=reev-static
 mkdir -p .dev/volumes/$STATIC/data/annonars
 
 ln -sr .dev/volumes/$STATIC/data/download/annonars/genes-* \
@@ -164,7 +164,7 @@ done
 ## mehari
 ##
 
-STATIC=varfish-static
+STATIC=reev-static
 mkdir -p .dev/volumes/$STATIC/data/mehari/grch3{7,8}
 
 rm -f .dev/volumes/$STATIC/data/mehari/grch3?/freqs
@@ -178,7 +178,7 @@ ln -sr .dev/volumes/$STATIC/data/download/mehari/freqs-grch38-* \
 ## viguno
 ##
 
-STATIC=varfish-static
+STATIC=reev-static
 
 rm -f .dev/volumes/$STATIC/data/{hgnc_xlink.tsv,hpo}
 
@@ -191,7 +191,7 @@ ln -sr .dev/volumes/$STATIC/data/download/viguno/hpo-20230606+0.1.6 \
 ## worker
 ##
 
-STATIC=varfish-static
+STATIC=reev-static
 mkdir -p .dev/volumes/$STATIC/data/worker/{grch3{7,8}/strucvars/bgdbs,noref/genes}
 
 rm -f .dev/volumes/$STATIC/data/worker/grch3?/strucvars/bgdbs/{exac,g1k,gnomad,dbvar,dgv,dgv-gs}.bin
@@ -276,7 +276,7 @@ ln -sr .dev/volumes/$STATIC/data/download/worker/masked-segdup-grch38-*/masked-s
 ## tracks
 ##
 
-STATIC=varfish-static
+STATIC=reev-static
 mkdir -p .dev/volumes/$STATIC/data/nginx/grch3{7,8}
 rm -f .dev/volumes/$STATIC/data/nginx/grch3?/*
 
@@ -303,7 +303,7 @@ To obtain ClinVar, use the following.
 Note that this will install the data from November 12, 2023 and you might want to [look here for the latest release](https://github.com/bihealth/annonars-data-clinvar/releases).
 
 ```bash session
-STATIC=varfish-static
+STATIC=reev-static
 
 wget -O /tmp/annonars-clinvar-minimal-grch37-20231112+0.25.0.tar.gz \
   https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-20231112/annonars-clinvar-minimal-grch37-20231112+0.25.0.tar.gz
