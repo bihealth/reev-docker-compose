@@ -18,6 +18,20 @@ x-service-default: &service_default
 # simplifies the configuration considerably.
 x-service-reev-default: &service_reev_default
   <<: *service_default
+  depends_on:
+    - annonars
+    - cada-prio
+    - dotty
+    - mehari
+    - nginx
+    - postgres
+    - rabbitmq
+    - redis
+    - viguno
+  image: "${image_base:-ghcr.io/bihealth}/${image_reev_name:-reev}:\
+    ${image_reev_version:-main}"
+  secrets:
+    - db-password
   volumes:
     - type: bind
       source: ${volumes_basedir:-./.dev/volumes}/reev-static/data
@@ -83,24 +97,10 @@ services:
   #
   # REEV web server
 
-  reev:
+  reev-backend:
     <<: *service_reev_default
-    container_name: reev
-    hostname: reev
-    depends_on:
-      - annonars
-      - cada-prio
-      - dotty
-      - mehari
-      - nginx
-      - postgres
-      - rabbitmq
-      - redis
-      - viguno
-    image: "${image_base:-ghcr.io/bihealth}/${image_reev_name:-reev}:\
-      ${image_reev_version:-main}"
-    secrets:
-      - db-password
+    container_name: reev-backend
+    hostname: reev-backend
     environment:
       FORWARDED_ALLOW_IPS: "*"
     labels:
@@ -112,6 +112,26 @@ services:
       - "traefik.http.routers.reev.rule=HostRegexp(`{catchall:.+}`)"
       - "traefik.http.services.reev.loadbalancer.server.port=8080"
       - "traefik.http.routers.reev.tls=true"
+
+  #
+  # REEV celery worker
+
+  reev-celery-worker:
+    <<: *service_reev_default
+    container_name: reev-celery-worker
+    hostname: reev-celery-worker
+    entrypoint:
+      - /entrypoint-celery-worker.sh
+
+  #
+  # REEV celery beat
+
+  reev-celery-beat:
+    <<: *service_reev_default
+    container_name: reev-celery-worker
+    hostname: reev-celery-worker
+    entrypoint:
+      - /entrypoint-celery-worker.sh
 
   # -- Dotty -----------------------------------------------------------------
   #
