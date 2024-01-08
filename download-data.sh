@@ -1,6 +1,10 @@
 #!/usr/bin/bash
 
+# Inofficial Bash Strict Mode
+#
+# cf. http://redsymbol.net/articles/unofficial-bash-strict-mode/
 set -euo pipefail
+IFS=$'\n\t'
 
 # -- Configuration ------------------------------------------------------------
 
@@ -15,7 +19,7 @@ export DOWNLOAD=${DOWNLOAD-reduced-dev}
 # Directory for static data.
 export STATIC_DIR=${STATIC_DIR-reev-static}
 # Overall directory prefix.
-export DIR_PREFIX=${DIR_PREFIX-$DIR_PREFIX}
+export DIR_PREFIX=${DIR_PREFIX-.dev}
 # S3 endpoing URL.
 export S3_ENDPOINT_URL=https://ceph-s3-public.cubi.bihealth.org
 
@@ -114,7 +118,7 @@ export V_UCSC_ALT_SEQ_LIFTOVER_38=${V_UCSC_ALT_SEQ_LIFTOVER_38-20221103}
 export V_PATHO_MMS=${V_PATHO_MMS-20220730}
 
 # annonars-data-clinvar clinvar
-export V_ANNONARS_DATA_CLINVAR_CLINVAR=${V_ANNONARS_DATA_CLINVAR_CLINVAR-20231112}
+export V_ANNONARS_DATA_CLINVAR_CLINVAR=${V_ANNONARS_DATA_CLINVAR_CLINVAR-20231231}
 # annonars-data-gnomad annonars
 export V_ANNONARS_DATA_CLINVAR_ANNONARS=${V_ANNONARS_DATA_CLINVAR_ANNONARS-0.31.0}
 # dotty-seqrepo
@@ -131,7 +135,7 @@ export V_CADA_PRIO_VERSION=${V_CADA_PRIO_VERSION-0.6.1}
 # -- Verbose Mode -------------------------------------------------------------
 
 # Use "set -x" if verbose and unless quiet.
-if [[ $QUIET -eq 0 ]] && [[ $VERBOSE -neq 0 ]]; then
+if [[ "$QUIET" -eq 0 ]] && [[ "$VERBOSE" -ne 0 ]]; then
     set -x
 fi
 
@@ -146,7 +150,7 @@ log_info()
 # Logging in debug mode.
 log_debug()
 {
-    [[ $VERBOSE -neq 0 ]] && echo "DBG:  $@" >&2
+    [[ $VERBOSE -ne 0 ]] && echo "DBG:  $@" >&2
 }
 
 # Logging in error mode.
@@ -211,7 +215,7 @@ annonars/genes-$V_ACMG_SF+$V_GNOMAD_EXOMES_GRCH37+$V_MEHARI_TXS+$V_HPO+$V_ORPHAP
 annonars/gnomad-exomes-grch37-$V_GNOMAD_EXOMES_GRCH37+$V_ANNONARS
 annonars/gnomad-exomes-grch38-$V_GNOMAD_EXOMES_GRCH37+$V_ANNONARS
 annonars/gnomad-genomes-grch37-$V_GNOMAD_EXOMES_GRCH37+$V_ANNONARS
-annonars/gnomad-genomes-grch38-$V_GNOMAD_EXOMES_GRCH32+$V_ANNONARS
+annonars/gnomad-genomes-grch38-$V_GNOMAD_EXOMES_GRCH38+$V_ANNONARS
 annonars/gnomad-mtdna-grch37-$V_GNOMAD_MT+$V_ANNONARS
 annonars/gnomad-mtdna-grch38-$V_GNOMAD_MT+$V_ANNONARS
 annonars/gnomad-sv-exomes-grch37-$V_GNOMAD_EXOMES_SVS_GRCH37+$V_ANNONARS
@@ -233,18 +237,19 @@ EOF
 mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/download
 # Download each entry from download list.  Note that we support commenting
 # out lines with a leading "#".
-while read line; do
+grep -v ^# /tmp/download-list.txt \
+| while read line; do
     # Create the download directory.
     run mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/download/$line
     # Actually download the data.
     log_info "s3://varfish-public/$(prefix_for $line)/$line/* -> $DIR_PREFIX/volumes/$STATIC_DIR/data/download/$line"
     run s5cmd \
         --endpoint-url=$S3_ENDPOINT_URL \
-        --no-sign-reuqest \
+        --no-sign-request \
         sync \
         "s3://varfish-public/$(prefix_for $line)/$line/*" \
         $DIR_PREFIX/volumes/$STATIC_DIR/data/download/$line
-done <(grep -v ^# /tmp/download-list.txt)
+done
 
 log_info "... done downloading data."
 
@@ -386,7 +391,7 @@ ln -sr \
     $DIR_PREFIX/volumes/$STATIC_DIR/data/viguno/hpo
 
 log_info "- worker"
-mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3{7,8}}/strucvars/bgdbs
+mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3{7,8}/strucvars/bgdbs
 
 log_info "  - strucvars/bgdbs"
 rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3{7,8}/strucvars/bgdbs/{exac,g1k,gnomad,dbvar,dgv,dgv-gs}.bin
@@ -418,7 +423,7 @@ ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/clinvar-strucva
   $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch38/strucvars/clinvar.bin
 
 log_info "  - strucvars/patho-mms"
-rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3?/strucvars/patho-mms.bin
+rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3?/strucvars/patho-mms.bed
 
 ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/patho-mms-grch37-*/patho-mms.bed | tr ' ' '\n' | tail -n 1) \
   $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch37/strucvars/patho-mms.bed
@@ -450,14 +455,14 @@ mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3{7,8}/genes
 rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3?/genes/{ensembl_genes.bin,refseq_genes.bin}
 
 ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/genes-regions-grch37-*/ensembl_genes.bin | tr ' ' '\n' | tail -n 1) \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch37/genes/ensembl_regions.bin
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch37/genes/ensembl_genes.bin
 ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/genes-regions-grch38-*/ensembl_genes.bin | tr ' ' '\n' | tail -n 1) \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch38/genes/ensembl_regions.bin
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch38/genes/ensembl_genes.bin
 
 ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/genes-regions-grch37-*/refseq_genes.bin | tr ' ' '\n' | tail -n 1) \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch37/genes/refseq_regions.bin
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch37/genes/refseq_genes.bin
 ln -sr $(ls $DIR_PREFIX/volumes/$STATIC_DIR/data/download/worker/genes-regions-grch38-*/refseq_genes.bin | tr ' ' '\n' | tail -n 1) \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch38/genes/refseq_regions.bin
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch38/genes/refseq_genes.bin
 
 log_info "  - grch3{7,8}/features"
 mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/worker/grch3{7,8}/features
@@ -478,22 +483,18 @@ log_info "- tracks"
 mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch3{7,8}
 rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch3{7,8}/*
 
-paths_37=$(find $DIR_PREFIX/volumes/$STATIC_DIR/data/download/tracks/ -type f -name '*.bed' -or -name '*.bed.gz' | sort | grep grch37)
-for path in $paths_37; do
-  if [[ -e ${path}.tbi ]]; then
-    ln -sr $path ${path}.tbi $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch37
-  else
-    ln -sr $path $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch37
-  fi
-done
-
-paths_38=$(find $DIR_PREFIX/volumes/$STATIC_DIR/data/download/tracks/ -type f -name '*.bed' -or -name '*.bed.gz' | sort | grep grch38)
-for path in $paths_38; do
-  if [[ -e ${path}.tbi ]]; then
-    ln -sr $path ${path}.tbi $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch38
-  else
-    ln -sr $path $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/grch38
-  fi
+for release in grch37 grch38; do
+  paths_release=$(find $DIR_PREFIX/volumes/$STATIC_DIR/data/download/tracks/ -type f -name '*.bed' -or -name '*.bed.gz' | sort | grep $release)
+  for path in $paths_release; do
+    if [[ -e ${path}.tbi ]]; then
+      rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/$release/$(basename $path)
+      rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/$release/$(basename $path).tbi
+      ln -sr $path ${path}.tbi $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/$release
+    else
+      rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/$release/$(basename $path)
+      ln -sr $path $DIR_PREFIX/volumes/$STATIC_DIR/data/nginx/$release
+    fi
+  done
 done
 
 log_info "- mehari transcripts"
@@ -501,61 +502,59 @@ log_info "- mehari transcripts"
 mkdir -p $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-grch3{7,8}
 
 for ext in .zst .zst.sha256 .zst.report .zst.report.sha256; do
-  wget -O $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-grch37/mehari-data-txs-grch37-$V_MEHARI_TXS.bin$ext \
-    https://github.com/bihealth/mehari-data-tx/releases/download/v0.4.4/mehari-data-txs-grch37-$V_MEHARI_TXS.bin$ext
-  wget -O $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-grch38/mehari-data-txs-grch38-$V_MEHARI_TXS.bin$ext \
-    https://github.com/bihealth/mehari-data-tx/releases/download/v0.4.4/mehari-data-txs-grch38-$V_MEHARI_TXS.bin$ext
+  for release in grch37 grch38; do
+    wget -O $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-$release/mehari-data-txs-$release-$V_MEHARI_TXS.bin$ext \
+      https://github.com/bihealth/mehari-data-tx/releases/download/v$V_MEHARI_TXS/mehari-data-txs-$release-$V_MEHARI_TXS.bin$ext
+  done
 done
 
-rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/mehari/grch3?/txs.bin.zst
-ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-grch37/mehari-data-txs-grch37-$V_MEHARI_TXS.bin.zst \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/mehari/grch37/txs.bin.zst
-ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-grch38/mehari-data-txs-grch38-$V_MEHARI_TXS.bin.zst \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/mehari/grch38/txs.bin.zst
+for release in grch37 grch38; do
+  rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/mehari/$release/txs.bin.zst
+  ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/mehari-data-txs-$release/mehari-data-txs-$release-$V_MEHARI_TXS.bin.zst \
+    $DIR_PREFIX/volumes/$STATIC_DIR/data/mehari/$release/txs.bin.zst
+done
 
 log_info "- clinvar"
 
-STATIC=reev-static
-
 wget -O /tmp/annonars-clinvar-minimal-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
   https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_CLINVAR/annonars-clinvar-minimal-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
-wget -O /tmp/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
-  https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVARCLINVAR_ANNONARS3.tar.gz
+wget -O /tmp/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
+  https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_CLINVAR/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 
-tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/downlCLINVAR_ANNONARSnonars/ \
+tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/ \
   -xf /tmp/annonars-clinvar-minimal-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars \
-  -xf /tmp/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
+  -xf /tmp/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 
-rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonarsCLINVAR_ANNONARS7/clinvar
+rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch37/clinvar
 ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-minimal-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
   $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch37/clinvar
-rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonarsCLINVAR_ANNONARS8/clinvar
+rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch38/clinvar
 ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-minimal-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/CLINVAR_ANNONARS/clinvar
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch38/clinvar
 
 wget -O /tmp/annonars-clinvar-genes-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
   https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_CLINVAR/annonars-clinvar-genes-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
-tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/downCLINVAR_ANNONARSnnonars \
-  -xf /tmp/annonars-clinvar-genes-$V_ANNONARS_DATA_CLINVAR_CLINVACLINVAR_ANNONARS.tar.gz
+tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars \
+  -xf /tmp/annonars-clinvar-genes-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 
-rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonarCLINVAR_ANNONARSvar-genes
+rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/clinvar-genes
 ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-genes-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonarsCLINVAR_ANNONARSar-genes
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/clinvar-genes
 
 wget -O /tmp/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
   https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_CLINVAR/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
-wget -O /tmp/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
-  https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
-tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/downlCLINVAR_ANNONARSnonars/ \
-  -xf /tmp/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
+wget -O /tmp/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz \
+  https://github.com/bihealth/annonars-data-clinvar/releases/download/annonars-data-clinvar-$V_ANNONARS_DATA_CLINVAR_CLINVAR/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/ \
-  -xf /tmp/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
+  -xf /tmp/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
+tar -C $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/ \
+  -xf /tmp/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS.tar.gz
 rm -f $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch3{7,8}/clinvar-sv
-ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/anCLINVAR_ANNONARS/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
+ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-sv-grch37-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
   $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch37/clinvar-sv
-ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_ANNONARSR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
-  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grcCLINVAR_ANNONARSinvar-sv
+ln -sr $DIR_PREFIX/volumes/$STATIC_DIR/data/download/annonars/annonars-clinvar-sv-grch38-$V_ANNONARS_DATA_CLINVAR_CLINVAR+$V_ANNONARS_DATA_CLINVAR_ANNONARS \
+  $DIR_PREFIX/volumes/$STATIC_DIR/data/annonars/grch37/clinvar--sv
 
 log_info "- dotty"
 
@@ -576,19 +575,19 @@ mkdir -p $DIR_PREFIX/volumes/reev-static/data/dotty
 ln -sr $DIR_PREFIX/volumes/reev-static/data/download/dotty/{*.json.gz,seqrepo} \
   $DIR_PREFIX/volumes/reev-static/data/dotty
 
-# cada-prio
+log_info "- cada-prio"
 
 mkdir -p $DIR_PREFIX/volumes/reev-static/data/download/cada
 pushd $DIR_PREFIX/volumes/reev-static/data/download/cada
 wget \
-    https://github.com/bihealth/cada-prio-data/releases/download/cada-prio-data-$model/cada-prio-model-$model+$V_CADA_PRIO_VERSION.tar.gz
-tar -xzf cada-prio-model-$model+$V_CADA_PRIO_VERSION.tar.gz 
+    https://github.com/bihealth/cada-prio-data/releases/download/cada-prio-data-$V_CADA_PRIO_MODEL/cada-prio-model-$V_CADA_PRIO_MODEL+$V_CADA_PRIO_VERSION.tar.gz
+tar -xzf cada-prio-model-$V_CADA_PRIO_MODEL+$V_CADA_PRIO_VERSION.tar.gz 
 popd
 
 mkdir -p $DIR_PREFIX/volumes/reev-static/data/cada
 rm -f $DIR_PREFIX/volumes/reev-static/data/cada/model
 
-source_dir="$DIR_PREFIX/volumes/reev-static/data/download/cada/cada-prio-model-$model+$V_CADA_PRIO_VERSION/model/"
+source_dir="$DIR_PREFIX/volumes/reev-static/data/download/cada/cada-prio-model-$V_CADA_PRIO_MODEL+$V_CADA_PRIO_VERSION/model/"
 for file in ${source_dir}*; do
     ln -sr "$file" "$DIR_PREFIX/volumes/reev-static/data/cada/"
 done
