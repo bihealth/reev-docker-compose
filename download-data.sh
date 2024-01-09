@@ -21,7 +21,7 @@ export STATIC_DIR=${STATIC_DIR-reev-static}
 # Overall directory prefix.
 export DIR_PREFIX=${DIR_PREFIX-.dev}
 # Overall static data directory.
-export DATA_DIR=$DIR_PREFIX/volumes/$STATIC_DIR/data
+export DATA_DIR=${DATA_DIR-$DIR_PREFIX/volumes/$STATIC_DIR/data}
 # S3 endpoing URL.
 export S3_ENDPOINT_URL=https://ceph-s3-public.cubi.bihealth.org
 
