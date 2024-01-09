@@ -267,7 +267,7 @@ mkdir -p $DATA_DIR/annonars/{grch37,grch38}
 
 rm -f $DATA_DIR/annonars/genes
 ln -sr \
-    $DATA_DIR/download/annonars/genes-$V_ACMG_SF+$V_GNOMAD_EXOMES_GRCH37+$V_MEHARI_TXS+$V_HPO+$V_ORPHAPACKETS+$V_VARFISHDB+$V_ANNONARS \
+    $DATA_DIR/download/annonars/genes-$V_ACMG_SF+$V_GNOMAD_CONSTRAINTS+$V_DBNSFP_NO_SUFFIX+$V_HPO+$V_ORPHAPACKETS+$V_VARFISHDB+$V_ANNONARS \
     $DATA_DIR/annonars/genes
 
 # cadd - GRCh37
@@ -387,15 +387,15 @@ log_info "- viguno"
 mkdir -p $DATA_DIR/viguno
 
 # xlink
-rm -f $DATA_DIR/viguno/hgnc_xlink.tsv
+rm -f $DATA_DIR/hgnc_xlink.tsv
 ln -sr \
-    $DATA_DIR/download/mehari/genes-xlink-20231122/genes-xlink.tsv \
-    $DATA_DIR/viguno/hgnc_xlink.tsv
+    $DATA_DIR/download/mehari/genes-xlink-$V_VARFISHDB/genes-xlink.tsv \
+    $DATA_DIR/hgnc_xlink.tsv
 # hpo
-rm -f $DATA_DIR/viguno/hpo
+rm -f $DATA_DIR/hpo
 ln -sr \
     $DATA_DIR/download/viguno/hpo-$V_HPO+$V_VIGUNO \
-    $DATA_DIR/viguno/hpo
+    $DATA_DIR/hpo
 
 log_info "- worker"
 mkdir -p $DATA_DIR/worker/grch3{7,8}/strucvars/bgdbs
