@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/bihealth/reev-docker-compose/compare/v0.6.0...v0.7.0) (2024-03-07)
+
+
+### Features
+
+* bump annonars/genes ([#53](https://github.com/bihealth/reev-docker-compose/issues/53)) ([b099172](https://github.com/bihealth/reev-docker-compose/commit/b09917215d4e57ed7284cc1ff75bc33baf98eeb0))
+
+
+### Bug Fixes
+
+* bump mehari-data-tx to 0.6.0 ([#55](https://github.com/bihealth/reev-docker-compose/issues/55)) ([97924e6](https://github.com/bihealth/reev-docker-compose/commit/97924e65a9154951fb91d064335b75b62dcd9d19))
+
 ## 0.6.0 (2024-02-08)
 
 
