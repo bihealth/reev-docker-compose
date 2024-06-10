@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/bihealth/reev-docker-compose/compare/v0.6.0...v0.7.0) (2024-06-10)
+
+
+### Features
+
+* Add V_HPO_ANNONARS_GENES  ([#59](https://github.com/bihealth/reev-docker-compose/issues/59)) ([402b256](https://github.com/bihealth/reev-docker-compose/commit/402b256823cf978dbe83f042c41c452ebaae7d1e))
+* bump annonars/genes ([#53](https://github.com/bihealth/reev-docker-compose/issues/53)) ([b099172](https://github.com/bihealth/reev-docker-compose/commit/b09917215d4e57ed7284cc1ff75bc33baf98eeb0))
+* bump to clinvar build for 2024-05-28 ([#60](https://github.com/bihealth/reev-docker-compose/issues/60)) ([6e6cfaf](https://github.com/bihealth/reev-docker-compose/commit/6e6cfafc29585ae9aac98a07d9c174e7123a32bf))
+* update version of clinvar to 20240503 ([#58](https://github.com/bihealth/reev-docker-compose/issues/58)) ([7ddfe8d](https://github.com/bihealth/reev-docker-compose/commit/7ddfe8de214a0e4bf15849f590a1c4c86c5267b5))
+
+
+### Bug Fixes
+
+* bump mehari-data-tx to 0.6.0 ([#55](https://github.com/bihealth/reev-docker-compose/issues/55)) ([97924e6](https://github.com/bihealth/reev-docker-compose/commit/97924e65a9154951fb91d064335b75b62dcd9d19))
+
 ## 0.6.0 (2024-02-08)
 
 
